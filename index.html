@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>宏观模型 · 企业回报 VS 资金成本</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a0e17'/%3E%3Cpath d='M6 22 L12 14 L17 18 L26 8' stroke='%23e8553d' stroke-width='2.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M6 25 L26 25' stroke='%233aa7ff' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0a0e17;
+    --card:#111827;
+    --card2:#0f1522;
+    --line:#1e2837;
+    --text:#e6e9f0;
+    --sub:#8b94a7;
+    --red:#e8553d;
+    --blue:#3aa7ff;
+    --accent:#ffd166;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans SC","Segoe UI",sans-serif;
+    line-height:1.6;
+    padding-bottom:32px;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:0 14px}
+  /* ===== 头部 ===== */
+  header{padding:26px 0 14px}
+  .kicker{
+    display:inline-block;font-size:12px;letter-spacing:2px;color:var(--sub);
+    border:1px solid var(--line);border-radius:999px;padding:3px 12px;margin-bottom:12px;
+  }
+  h1{font-size:26px;font-weight:700;line-height:1.3}
+  h1 .vs{color:var(--sub);font-weight:500;font-size:22px;margin:0 4px}
+  .sub{color:var(--sub);font-size:14px;margin-top:8px}
+  .meta{
+    display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;font-size:12px;color:var(--sub);
+  }
+  .meta .pill{
+    border:1px solid var(--line);border-radius:6px;padding:4px 10px;background:var(--card);
+  }
+  .meta .pill b{color:var(--text);font-weight:600}
+  /* ===== 图表卡片 ===== */
+  .chart-card{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:14px 10px 6px;margin-top:14px;
+  }
+  .chart-head{display:flex;justify-content:space-between;align-items:baseline;padding:0 6px 8px}
+  .chart-title{font-size:15px;font-weight:600}
+  .chart-update{font-size:11px;color:var(--sub)}
+  #chart{width:100%;height:420px}
+  @media (min-width:768px){
+    #chart{height:520px}
+  }
+  /* 图例条 */
+  .legend-row{
+    display:flex;flex-wrap:wrap;gap:14px;padding:8px 6px 2px;font-size:13px;color:var(--sub);
+  }
+  .legend-row .lg{display:flex;align-items:center;gap:6px}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+  .dot.red{background:var(--red)}
+  .dot.blue{background:var(--blue)}
+  /* ===== 说明区 ===== */
+  section.note{
+    background:var(--card2);border:1px solid var(--line);border-radius:12px;
+    padding:16px;margin-top:14px;
+  }
+  .note h2{font-size:15px;font-weight:600;margin-bottom:10px}
+  .note p{font-size:14px;color:var(--text);margin-bottom:10px}
+  .note p:last-child{margin-bottom:0}
+  .note .hl-red{color:var(--red);font-weight:600}
+  .note .hl-blue{color:var(--blue);font-weight:600}
+  /* 关键时点 */
+  .events{list-style:none;margin-top:4px}
+  .events li{
+    display:flex;gap:10px;align-items:baseline;
+    padding:9px 0;border-bottom:1px dashed var(--line);font-size:14px;
+  }
+  .events li:last-child{border-bottom:none}
+  .ev-date{
+    flex:none;font-variant-numeric:tabular-nums;color:var(--accent);
+    font-weight:600;font-size:13px;width:86px;
+  }
+  .ev-text{color:var(--text)}
+  /* 口径与免责 */
+  .foot{font-size:12px;color:var(--sub);margin-top:14px}
+  .foot p{margin-bottom:6px}
+  .foot .disc{color:#7a8497}
+  .load-err{
+    padding:24px;text-align:center;color:var(--sub);font-size:14px;display:none;
+  }
+  a{color:var(--blue)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="kicker">宏观模型系列</span>
+    <h1>企业回报 <span class="vs">VS</span> 资金成本</h1>
+    <p class="sub">两条曲线，从同一起点出发，每隔几年靠到一起。每一次靠近，都引出同一个问题：优质资产是否被低估了？</p>
+    <div class="meta">
+      <span class="pill">红线 <b>沪深300全收益指数</b></span>
+      <span class="pill">蓝线 <b>10年期国债持有回报</b></span>
+      <span class="pill" id="pillDate">数据更新中…</span>
+    </div>
+  </header>
+
+  <div class="chart-card">
+    <div class="chart-head">
+      <span class="chart-title">2005年至今 · 日频对比</span>
+      <span class="chart-update" id="chartUpdate"></span>
+    </div>
+    <div id="chart"></div>
+    <div class="load-err" id="loadErr">数据加载失败，请稍后重试</div>
+    <div class="legend-row">
+      <span class="lg"><span class="dot red"></span>企业回报：沪深300全收益指数</span>
+      <span class="lg"><span class="dot blue"></span>资金成本：10年期国债持有回报</span>
+    </div>
+  </div>
+
+  <section class="note">
+    <h2>这个模型在看什么</h2>
+    <p>红线是<span class="hl-red">沪深300全收益指数</span>——中国最核心的一批上市公司创造的回报，分红也算在内。蓝线是<span class="hl-blue">持有10年期国债的累积回报</span>——资金的基础回报，大致对应社会的融资成本。两条线都从2005年初的1000点起步。</p>
+    <p>模型逻辑很朴素：一个健康的经济里，企业用资金创造的全部回报，长期应当高于资金本身的成本，这就是风险溢价。当红线跌到蓝线下方、或两线几乎贴合，意味着最优质企业的长期回报还不如资金的基础回报——要么企业真的变差了，要么是市场过度悲观。</p>
+  </section>
+
+  <section class="note">
+    <h2>历史上的关键时刻</h2>
+    <ul class="events" id="eventList"></ul>
+  </section>
+
+  <div class="foot">
+    <p><b>数据来源：</b>沪深300全收益指数（中证指数官网）；10年期国债收益率（中央国债登记结算有限责任公司）。每日自动更新。</p>
+    <p><b>口径说明：</b>蓝线由10年期国债到期收益率按久期近似法（修正久期取8.5）反推日频持有回报；两线均归一化至2005年初=1000点。横坐标以交易日（天）为单位。</p>
+    <p class="disc">本页面仅为历史数据回顾与模型思路展示，不构成任何投资建议。过去的表现不代表未来。</p>
+  </div>
+
+</div>
+
+<script src="https://fastly.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script>
+(function(){
+  var chartEl = document.getElementById('chart');
+  var loadErr = document.getElementById('loadErr');
+  var RED = '#e8553d', BLUE = '#3aa7ff', ACCENT = '#ffd166';
+  var chart = null;
+
+  function initChart(data){
+    if(!window.echarts){
+      loadErr.style.display='block';
+      loadErr.textContent='图表库加载失败，请检查网络后重试';
+      return;
+    }
+    var series = data.series;
+    var dates = series.dates;
+    var red = series.red;
+    var blue = series.blue;
+
+    // 事件标注点：放在两条线较高者的上方
+    var markPoints = (data.events||[]).map(function(ev){
+      var i = dates.indexOf(ev.date);
+      if(i < 0) return null;
+      var y = Math.max(red[i], blue[i]) * 1.015;
+      return {
+        name: ev.date + ' · ' + ev.text,
+        coord: [ev.date, y],
+        value: ev.date,
+        symbol: 'circle',
+        symbolSize: 7,
+        itemStyle: { color: ACCENT, borderColor: '#0a0e17', borderWidth: 1.5 },
+        label: {
+          show: true,
+          position: 'top',
+          distance: 4,
+          color: '#e6e9f0',
+          fontSize: 10,
+          backgroundColor: 'rgba(10,14,23,0.85)',
+          borderColor: '#2a3648',
+          borderWidth: 1,
+          borderRadius: 4,
+          padding: [3, 6],
+          formatter: ev.date.slice(0,4) + ' · ' + ev.text
+        }
+      };
+    }).filter(Boolean);
+
+    chart = echarts.init(chartEl);
+    var opt = {
+      backgroundColor: 'transparent',
+      animation: true,
+      textStyle: { color: '#8b94a7', fontFamily: '-apple-system,"PingFang SC","Microsoft YaHei",sans-serif' },
+      grid: { left: 8, right: 14, top: 34, bottom: 44, containLabel: true },
+      tooltip: {
+        trigger: 'axis',
+        confine: true,
+        backgroundColor: 'rgba(13,19,30,0.94)',
+        borderColor: '#2a3648',
+        textStyle: { color: '#e6e9f0', fontSize: 12 },
+        axisPointer: { type: 'line', lineStyle: { color: '#3a4659', type: 'dashed' } },
+        formatter: function(ps){
+          var d = ps[0].axisValue;
+          var r = ps[0].value, b = ps[1].value;
+          var ratio = (b > 0) ? (r/b) : 0;
+          return '<div style="margin-bottom:4px;font-weight:600">' + d + '</div>' +
+            '<div style="color:' + RED + '">企业回报 ' + Number(r).toLocaleString('zh-CN') + '</div>' +
+            '<div style="color:' + BLUE + '">资金成本 ' + Number(b).toLocaleString('zh-CN') + '</div>' +
+            '<div style="color:#8b94a7;margin-top:3px">回报/成本 ' + ratio.toFixed(2) + '</div>';
+        }
+      },
+      xAxis: {
+        type: 'category',
+        data: dates,
+        boundaryGap: false,
+        axisLine: { lineStyle: { color: '#2a3648' } },
+        axisTick: { show: false },
+        axisLabel: { color: '#8b94a7', fontSize: 11, hideOverlap: true }
+      },
+      yAxis: {
+        type: 'value',
+        scale: true,
+        name: '指数（2005年初=1000）',
+        nameTextStyle: { color: '#5b6475', fontSize: 10, padding: [0, 0, 4, 0] },
+        splitLine: { lineStyle: { color: '#1c2635' } },
+        axisLabel: { color: '#8b94a7', fontSize: 11 }
+      },
+      dataZoom: [
+        { type: 'inside', start: 0, end: 100, zoomOnMouseWheel: true },
+        { type: 'slider', start: 0, end: 100, height: 16, bottom: 6,
+          borderColor: '#2a3648', backgroundColor: 'rgba(17,24,39,0.6)',
+          fillerColor: 'rgba(58,167,255,0.16)', handleStyle: { color: '#3aa7ff' },
+          textStyle: { color: '#5b6475', fontSize: 10 },
+          dataBackground: { lineStyle: { color: '#2a3648' }, areaStyle: { color: '#1c2635' } } }
+      ],
+      series: [
+        {
+          name: '企业回报（沪深300全收益）',
+          type: 'line',
+          data: red,
+          showSymbol: false,
+          smooth: 0.12,
+          lineStyle: { width: 2, color: RED },
+          itemStyle: { color: RED },
+          emphasis: { disabled: true },
+          markPoint: { data: markPoints, animation: true },
+          endLabel: {
+            show: true,
+            formatter: '企业回报',
+            color: RED,
+            fontSize: 12,
+            fontWeight: 600,
+            distance: 6,
+            backgroundColor: 'rgba(10,14,23,0.7)',
+            padding: [2, 5],
+            borderRadius: 4
+          }
+        },
+        {
+          name: '资金成本（10年期国债持有回报）',
+          type: 'line',
+          data: blue,
+          showSymbol: false,
+          smooth: 0.12,
+          lineStyle: { width: 2, color: BLUE },
+          itemStyle: { color: BLUE },
+          emphasis: { disabled: true },
+          endLabel: {
+            show: true,
+            formatter: '资金成本',
+            color: BLUE,
+            fontSize: 12,
+            fontWeight: 600,
+            distance: 6,
+            backgroundColor: 'rgba(10,14,23,0.7)',
+            padding: [2, 5],
+            borderRadius: 4
+          }
+        }
+      ]
+    };
+    chart.setOption(opt);
+
+    // 更新头部信息
+    var last = dates[dates.length-1];
+    document.getElementById('pillDate').innerHTML = '更新至 <b>' + last + '</b>';
+    document.getElementById('chartUpdate').textContent = '数据截至 ' + last;
+
+    // 事件列表
+    var list = document.getElementById('eventList');
+    list.innerHTML = '';
+    (data.events||[]).forEach(function(ev){
+      var li = document.createElement('li');
+      var d = document.createElement('span');
+      d.className = 'ev-date';
+      d.textContent = ev.date;
+      var t = document.createElement('span');
+      t.className = 'ev-text';
+      t.textContent = ev.text;
+      li.appendChild(d);
+      li.appendChild(t);
+      list.appendChild(li);
+    });
+
+    // 视窗变化时 resize
+    var tid = null;
+    window.addEventListener('resize', function(){
+      if(tid) clearTimeout(tid);
+      tid = setTimeout(function(){ chart && chart.resize(); }, 150);
+    });
+  }
+
+  // 加载数据
+  fetch('data.json', { cache: 'no-store' })
+    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(function(data){
+      if(!data || !data.series || !data.series.dates || !data.series.dates.length){
+        throw new Error('数据为空');
+      }
+      initChart(data);
+    })
+    .catch(function(e){
+      loadErr.style.display='block';
+      loadErr.textContent='数据加载失败（' + e.message + '），请稍后重试';
+    });
+})();
+</script>
+</body>
+</html>
